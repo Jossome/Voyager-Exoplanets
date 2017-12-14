@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.svm import SVC, OneClassSVM, NuSVC
 # from imblearn.over_sampling import SMOTE
 from imblearn.under_sampling import RandomUnderSampler
-from sklearn.metrics import roc_auc_score, make_scorer, recall_score, accuracy_score
+from sklearn.metrics import roc_auc_score, make_scorer, recall_score, auc, accuracy_score, roc_curve
 from sklearn.model_selection import cross_val_score
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import Imputer, MinMaxScaler
@@ -228,7 +228,7 @@ def kepler_candidate_dataset(probability = 0.99, ensemble = True):
 
 @timeit
 def kepler_train_test():
-    df_X, df_y = load_confirmed()
+    df_X, df_y = load_kepler()
     
     
     div = int(len(df_X) * 0.7)
@@ -345,10 +345,33 @@ def outlier_detection_local():
     
     return res, df_y, 0
 
+def plot_roc():
+    import matplotlib.pyplot as plt
+    df_X, df_y = load_confirmed()
+    clf, pipe, pca = train_habitable(df_X, df_y, ensemble = True)    
+    df = df_X
+    y_test = df_y
+    df = remove_not_numeric(df)
+    df = pipe.transform(df)
+    df = pca.transform(df)
+    res = clf.predict_proba(df)
+    preds = res[:,1]
+    fpr, tpr, threshold = roc_curve(y_test, preds)
+    roc_auc = auc(fpr, tpr)
+    plt.title('Receiver Operating Characteristic')
+    plt.plot(fpr, tpr, 'b', label = 'AUC = %0.2f' % roc_auc)
+    plt.legend(loc = 'lower right')
+    plt.plot([0, 1], [0, 1],'r--')
+    plt.xlim([0, 1])
+    plt.ylim([0, 1])
+    plt.ylabel('True Positive Rate')
+    plt.xlabel('False Positive Rate')
+    plt.show()
+
 
 if __name__ == '__main__':
     #x, y, z = outlier_detection_local()
     #kepler_train_test()
     #kepler_candidate_dataset(probability = 0.5)
-    confirmed_exoplanets_dataset_onebyone()
+    plot_roc()
     #test_false_positive()
